@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1 plus MathML 2.0//EN"
+	"http://www.w3.org/TR/MathML2/dtd/xhtml-math11-f.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta name="Author" content="Gerd Knops" />
+		<style type="text/css">
+			body {
+				background-color: white;
+				background-attachment: fixed;
+				font: 12px "Monaco", "Courier New", monospace;
+				font-style: normal;
+				font-weight: normal;
+			}
+			a {
+			}
+			a:hover {
+				background-color: #dddddd;
+			}
+			span.SyslogError {
+				color: Crimson;
+			}
+			span.SyslogWarning {
+				color: Chocolate;
+			}
+			span.ApLoSearchHighlight {
+			    background: LightGray;
+			    border: 1px solid black;
+			    -webkit-border-radius: 3px;
+			}
+			span.ApLoSearchSelected {
+			    background: yellow;
+			    border: 1px solid black;
+			    -webkit-border-radius: 3px;
+			}
+			.scriptError {
+				color: Crimson;
+			}
+			
+			/*PARSER_CSS_HERE*/
+		</style>
+		<script type="text/javascript">
+			//*****************************************************************************
+			// Global variables
+			//*****************************************************************************
+			var ApLoMatches=new Array();
+			var ApLoSelectedMatch=null;
+			
+			//*****************************************************************************
+			// Functions called from outside
+			//*****************************************************************************
+			function apLoHighlightString(searchString)
+			{
+			    apLoRemoveHighlights();
+			    apLoAddHighlights(document.body,searchString.toLowerCase());
+				
+				if(ApLoMatches.length>0)
+				{
+					apLoSetSelectedMatch(ApLoMatches[ApLoMatches.length-1]);
+				}
+				
+				return ApLoMatches.length;
+			}
+			function apLoRemoveHighlights()
+			{
+				apLoSetSelectedMatch(null);
+			    apLoRemoveHighlightsIn(document.body);
+				ApLoMatches.length=0;
+			}
+			function apLoFindPrevious()
+			{
+				var element=null;
+				var selectedElement=apLoGetSelectedNode(true);
+				
+				if(selectedElement)
+				{
+					element=apLoFindHighlightedElementAtOrPreceding(selectedElement);
+				
+					if(element==selectedElement)
+					{
+						element=apLoElementPreceding(selectedElement);
+						element=apLoFindHighlightedElementAtOrPreceding(element);
+					}
+				}
+				
+				if(!element && ApLoMatches.length>0)
+				{
+					element=ApLoMatches[0];
+				}
+				
+				apLoSetSelectedMatch(element);				
+			}
+			function apLoFindNext()
+			{
+				var element=null;
+				var selectedElement=apLoGetSelectedNode(true);
+				
+				if(selectedElement)
+				{
+					element=apLoFindHighlightedElementAtOrFollowing(selectedElement);
+				
+					if(element==selectedElement)
+					{
+						element=apLoElementFollowing(selectedElement);
+						element=apLoFindHighlightedElementAtOrFollowing(element);
+					}
+				}
+				
+				if(!element && ApLoMatches.length>0)
+				{
+					element=ApLoMatches[ApLoMatches.length-1];
+				}
+				
+				apLoSetSelectedMatch(element);				
+			}
+			
+			//*****************************************************************************
+			// Utility functions
+			//*****************************************************************************
+			function apLoRemoveHighlightsIn(element)
+			{
+				if(element && element.nodeType==1)
+				{
+					if(element.getAttribute("class")=="ApLoSearchHighlight")
+					{
+						var text=element.removeChild(element.firstChild);
+						element.parentNode.insertBefore(text,element);
+						element.parentNode.removeChild(element);
+						
+						return true;
+					}
+					else
+					{
+						var normalize=false;
+						for(var i=element.childNodes.length-1;i>=0;i--)
+						{
+							if(apLoRemoveHighlightsIn(element.childNodes[i]))
+							{
+								normalize=true;
+							}
+						}
+						if(normalize)
+						{
+							element.normalize();
+						}
+					}
+				}
+			}
+			function apLoFindHighlightedElementAtOrPreceding(element)
+			{
+				while(element)
+				{
+					if(element.nodeType==1
+						&& element.getAttribute("class")=="ApLoSearchHighlight"
+					)
+					{
+						break;
+					}
+					
+					element=apLoElementPreceding(element);
+				}
+				
+				return element;
+			}
+			function apLoFindHighlightedElementAtOrFollowing(element)
+			{
+				while(element)
+				{
+					if(element.nodeType==1
+						&& element.getAttribute("class")=="ApLoSearchHighlight"
+					)
+					{
+						break;
+					}
+					
+					element=apLoElementFollowing(element);
+				}
+				
+				return element;
+			}
+			function apLoElementPreceding(element) {
+				
+				if(element.childNodes.length>0)
+				{
+					return element.childNodes[element.childNodes.length-1];
+				}
+				
+				if(element.previousSibling) return element.previousSibling;
+				
+				if(element.parentNode==element) return null;
+				
+				while(!element.parentNode.previousSibling)
+				{
+					element=element.parentNode;
+					
+					if(!element.parentNode) return null;
+				}
+				
+				return element.parentNode.previousSibling;
+			}
+			function apLoElementFollowing(element) {
+				
+				if(element.childNodes.length>0) return element.childNodes[0];
+				if(element.nextSibling) return element.nextSibling;
+				
+				if(element.parentNode==element) return null;
+				
+				while(!element.parentNode.nextSibling)
+				{
+					element=element.parentNode;
+					
+					if(!element.parentNode) return null;
+				}
+				
+				return element.parentNode.nextSibling;
+			}
+			function apLoAddHighlights(element,searchString)
+			{
+				if(!element) return false;
+				if(element.nodeType==3)
+				{
+					// Text node
+					while(true)
+					{
+						var value=element.nodeValue;
+						var idx=value.toLowerCase().indexOf(searchString);
+						
+						if(idx<0) break;             
+						
+						var span=document.createElement("span");
+						var text=document.createTextNode(value.substr(idx,searchString.length));
+						span.appendChild(text);
+						span.setAttribute("class","ApLoSearchHighlight");
+						text=document.createTextNode(value.substr(idx+searchString.length));
+						element.deleteData(idx,value.length-idx);
+						var next=element.nextSibling;
+						element.parentNode.insertBefore(span,next);
+						element.parentNode.insertBefore(text,next);
+						element=text;
+						ApLoMatches.push(span);
+					}
+				}
+				else if(element.nodeType==1)
+				{
+					// Element node
+					if(element.style.display!="none" && element.nodeName.toLowerCase()!='select')
+					{
+						for(var i=element.childNodes.length-1;i>=0;i--)
+						{
+							apLoAddHighlights(element.childNodes[i],searchString);
+						}
+					}
+				}
+			}
+			function apLoGetSelectedNode()
+			{
+		        var	selection=window.getSelection();
+		        if(selection.rangeCount<=0)
+				{
+					return ApLoSelectedMatch;
+				}
+				
+				var range=selection.getRangeAt(0);
+				var	s=range.toString();
+				
+				if(s.length==0 && ApLoSelectedMatch)
+				{
+					return ApLoSelectedMatch;
+				}
+				
+				return range.startContainer;
+			}
+			function apLoSetSelectedMatch(element)
+			{
+				if(ApLoSelectedMatch)
+				{
+					ApLoSelectedMatch.setAttribute("class","ApLoSearchHighlight");
+				}
+				
+				if(element)
+				{
+					apLoSelectTextInElement(element);
+					element.setAttribute("class","ApLoSearchSelected");
+					
+					apLoScrollIntoViewIfNeeded(element);
+				}
+				
+				ApLoSelectedMatch=element;
+			}
+			function apLoSelectTextInElement(element) {
+				
+				var selection=window.getSelection();
+				var range=document.createRange();
+				range.selectNode(element);
+				selection.removeAllRanges();
+				selection.addRange(range);
+			}
+			function apLoScrollIntoViewIfNeeded(element) {
+				
+				var topOfPage=window.pageYOffset
+					|| document.documentElement.scrollTop
+					|| document.body.scrollTop;
+				var heightOfPage=window.innerHeight
+					|| document.documentElement.clientHeight
+					|| document.body.clientHeight;
+				var elementY=0;
+				var elementH=0;
+				for(var p=element;p&&p.tagName!='BODY';p=p.offsetParent)
+				{
+					elementY+=p.offsetTop;
+				}
+				elementH=element.offsetHeight;
+				if((topOfPage+heightOfPage)<(elementY+elementH))
+				{
+					element.scrollIntoView(false);
+				}
+				else if(elementY<topOfPage)
+				{
+					element.scrollIntoView(true);
+				}
+			}
+			
+			
+			/*PARSER_JAVASCRIPT_HERE*/
+			
+		</script>
+	</head>
+	<body>
+		<div class="document">
+		</div>
+	</body>
+</html>

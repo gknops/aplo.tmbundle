@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>contactEmailRot13</key>
+	<string>tregv-ncyb@ovgneg.pbz</string>
+	<key>contactName</key>
+	<string>Gerd Knops</string>
+	<key>description</key>
+	<string>This bundle contains the ApLo application which manages HTML output windows for other bundles.</string>
+	<key>name</key>
+	<string>ApLo</string>
+	<key>uuid</key>
+	<string>3A75A057-1008-436C-AC8A-23D2FDD3B36A</string>
+</dict>
+</plist>

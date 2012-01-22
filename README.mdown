@@ -1,0 +1,3 @@
+This TextMate bundle contains the ApLo application which manages HTML output windows for other bundles.
+
+[Read more about ApLo here](https://github.com/gknops/ApLo)
